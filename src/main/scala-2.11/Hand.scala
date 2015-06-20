@@ -1,53 +1,73 @@
 /**
- * Created by dmitrii on 08.06.15.
+ * Main module for poker hands
  */
 
-object Hand {
-  val suits = Seq('h', 'd', 'c', 's')
-  val values = Seq('2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A')
-  val combinationOrder = Seq(
-    "HIGH_CARD",
-    "ONE_PAIR",
-    "TWO_PAIR",
-    "SET",
-    "STRAIGHT",
-    "FLUSH",
-    "FULL_HOUSE",
-    "FOUR",
-    "STRAIGHT_FLUSH"
-  )
-  def possibleCards = {
-    for {
-        i1 <- values
-          i2 <- suits
-    } yield (i1, i2)
-  }
+sealed trait Suit
+
+object Suit {
+  case object Clubs extends Suit
+  case object Spades extends Suit
+  case object Hearts extends Suit
+  case object Diamonds extends Suit
 }
 
-class Hand(val cards: String = "") {
-  val handSuits = for (i <- cards if cards.indexOf(i) % 2 == 1) yield i
-  val handVals = for (i <- cards if cards.indexOf(i) % 2 == 0) yield i
-  isCorrect
-  def hasCorrectLen = cards.length == 10
-  def isCorrect = {
-    if (hasCorrectLen) {
-      val correctSuits = handSuits.foldLeft(true)((a, b) => a & (Hand.suits contains b))
-      val correctVals = handVals.foldLeft(true)((a, b) => a & (Hand.values contains b))
-      if (!correctSuits) {
-        throw new IllegalArgumentException("hand suit is wrong!")
-      } else if (!correctVals) {
-        throw new IllegalArgumentException("hand value is wrong!")
-      } else true
-    } else throw new IllegalArgumentException("hand length is wrong!")
-  }
-  def combination = {
-    val diffSuits = handSuits.toSet
-    //val diffVals = handVals.toSet
-    println("Different suits:    " +  diffSuits.size.toString)
-    if (diffSuits.size == 1) "FLUSH" else "SOMETHING_ELSE"
-  }
-  def isGreaterThan(otherHand: Hand) {
-    println("this hand: " + this.cards)
-    println("other hand: " + otherHand.cards)
-  }
+sealed abstract class CardValue(val number: Int)
+
+object CardValue {
+  case object Two extends CardValue(2)
+  case object Three extends CardValue(3)
+  case object Four extends CardValue(4)
+  case object Five extends CardValue(5)
+  case object Six extends CardValue(6)
+  case object Seven extends CardValue(7)
+  case object Eight extends CardValue(8)
+  case object Nine extends CardValue(9)
+  case object Ten extends CardValue(10)
+  case object Jack extends CardValue(11)
+  case object Queen extends CardValue(12)
+  case object King extends CardValue(13)
+  case object Ace extends CardValue(14)
 }
+
+class Card(val value: CardValue, val suit: Suit) extends Ordered[Card] {
+  def compare(that: Card): Int = this.value.number - that.value.number
+  def sameNumber(that: Card): Boolean = this.value.number == that.value.number
+  def sameSuit(that: Card): Boolean = this.suit == that.suit
+  def completelySame(that: Card): Boolean = sameSuit(that) & sameNumber(that)
+}
+
+abstract class Hand(val order: Int = 0) extends Ordered[Hand] {
+  def orderCounted = order
+  def compare(that: Hand): Int = this.orderCounted - that.orderCounted
+}
+
+class PlayersHand(c1: Card, c2: Card, c3: Card, c4: Card, c5: Card) extends Hand {
+  val cards = List(c1, c2, c3, c4, c5)
+  val cardsHR = for (c <- cards) yield (c.value, c.suit)
+  if (checkSameCards) throw new IllegalArgumentException("hand has same cards")
+  def checkSameCards = {
+    val checkList = for {
+      card_one <- cards
+      card_two <- cards
+      if card_one != card_two
+    } yield card_one completelySame card_two
+    checkList.foldLeft(false)(_|_)
+  }
+  println(checkSameCards)
+  println(cardsHR)
+  println(orderCounted)
+  override def orderCounted = 0 // Todo: write this correctly
+}
+
+object Hand {
+  case object StraightFlush extends Hand(9)
+  case object Four extends Hand(8)
+  case object FullHouse extends Hand(7)
+  case object Flush extends Hand(6)
+  case object Straight extends Hand(5)
+  case object Set extends Hand(4)
+  case object TwoPair extends Hand(3)
+  case object OnePair extends Hand(2)
+  case object HighCard extends Hand(1)
+}
+

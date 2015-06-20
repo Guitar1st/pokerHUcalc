@@ -1,33 +1,30 @@
 import org.scalatest.FunSuite
 /**
- * Created by dmitrii on 08.06.15.
+ * Main test for Hand and Card classes
  */
 class HandTest extends FunSuite {
-  test("method isCorrect works correctly") {
-    var thrown = intercept[IllegalArgumentException] {
-      new Hand
-    }
-    assert(thrown.getMessage === "hand length is wrong!")
-    thrown = intercept[IllegalArgumentException] {
-      new Hand("2d3c")
-    }
-    assert(thrown.getMessage === "hand length is wrong!")
-    thrown = intercept[IllegalArgumentException] {
-      new Hand("ud3d4d5d6h")
-    }
-    assert(thrown.getMessage === "hand value is wrong!")
-    thrown = intercept[IllegalArgumentException] {
-      new Hand("2d3d4d5p6h")
-    }
-    assert(thrown.getMessage === "hand suit is wrong!")
-    new Hand("2d3dTd5d6d")
-  }
+  test("compare methods for cards work correctly") {
+    val card1 = new Card(CardValue.Five, Suit.Hearts)
+    val card2 = new Card(CardValue.Six, Suit.Clubs)
+    val card3 = new Card(CardValue.Six, Suit.Diamonds)
+    val card4 = new Card(CardValue.Ace, Suit.Diamonds)
+    val card5 = new Card(CardValue.Ace, Suit.Spades)
+    val card6 = new Card(CardValue.Ace, Suit.Spades)
 
-  test("method combination() works correctly") {
-    val flushHand = new Hand("2d3dTd5d6d")
-    assert(flushHand.combination === "FLUSH")
+    val hand1 = new PlayersHand(card1, card2, card3, card4, card5)
+    val thrown = intercept[IllegalArgumentException] {
+      val hand2 = new PlayersHand(card2, card3, card4, card5, card6)
+    }
+    assert(thrown.getMessage === "hand has same cards")
 
-    val notFlushHand = new Hand("2d3dTs5d6d")
-    assert(notFlushHand.combination === "SOMETHING_ELSE")
+    assert((card1 < card2) === true)
+    assert((card3 < card1) === false)
+    assert((card2 <= card3) === true)
+    assert((card2 >= card3) === true)
+    assert((card2 sameNumber card3) === true)
+    assert((card2 sameSuit card3) === false)
+    assert((card3 sameSuit card4) === true)
+    assert((card3 completelySame card4) === false)
+    assert((card5 completelySame card6) === true)
   }
 }
