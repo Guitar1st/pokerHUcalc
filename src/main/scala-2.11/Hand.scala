@@ -36,12 +36,18 @@ class Card(val value: CardValue, val suit: Suit) extends Ordered[Card] {
   def completelySame(that: Card): Boolean = sameSuit(that) & sameNumber(that)
 }
 
+object PlayersHand {
+  val shift = 4 // equivalent of *16 to evaluate correct handId
+}
+
 class PlayersHand(c1: Card, c2: Card, c3: Card, c4: Card, c5: Card) {
   val cards = List(c1, c2, c3, c4, c5)
   val cardsHR = for (c <- cards) yield (c.value, c.suit)
   val cardsNumbersSorted = (for (c <- cards) yield c.value.number).sorted
+  val handId = cardsNumbersSorted.foldRight(0)((a, b) => (a + b) << PlayersHand.shift)
   if (checkSameCards) throw new IllegalArgumentException("hand has same cards")
   println(cardsHR)
+  println(handId)
   def checkSameCards = {
     val checkList = for {
         card_one <- cards
@@ -64,14 +70,24 @@ class PlayersHand(c1: Card, c2: Card, c3: Card, c4: Card, c5: Card) {
       case _ => 0
     }
   }
-  def force = {
+  def countForce: HandForce = {
     // todo: finish this func
     lazy val straightVal = isStraight
+    lazy val diffVals = cardsNumbersSorted.toSet.size
+    //println(s"diffVals = $diffVals")
     if (isFlush) {
-      if (straightVal != 0) {new HandForce(Hand.StraightFlush, straightVal)} else Hand.Flush
+      if (straightVal != 0) {
+        new HandForce(Hand.StraightFlush, straightVal)
+      } else new HandForce(Hand.Flush, handId)
     } else if (straightVal != 0) {
       new HandForce(Hand.Straight, straightVal)
-    } else new HandForce(Hand.HighCard, 0)
+    } else diffVals match {
+      case 5 => new HandForce(Hand.HighCard, handId)
+      case 4 => new HandForce(Hand.OnePair, handId)
+      case 3 => new HandForce(Hand.TwoPair, handId) // Can be Set
+      case 2 => new HandForce(Hand.FullHouse, handId) // Can be Four
+    }
+
   }
 }
 
@@ -79,15 +95,16 @@ class PlayersHand(c1: Card, c2: Card, c3: Card, c4: Card, c5: Card) {
 abstract class Hand(val order: Int = 0)
 
 object Hand {
-  case object StraightFlush extends Hand(900)
-  case object Four extends Hand(800)
-  case object FullHouse extends Hand(700)
-  case object Flush extends Hand(600)
-  case object Straight extends Hand(500)
-  case object Set extends Hand(400)
-  case object TwoPair extends Hand(300)
-  case object OnePair extends Hand(200)
-  case object HighCard extends Hand(100)
+  val initOrder = 1 << 4*6
+  case object StraightFlush extends Hand(9*initOrder)
+  case object Four extends Hand(8*initOrder)
+  case object FullHouse extends Hand(7*initOrder)
+  case object Flush extends Hand(6*initOrder)
+  case object Straight extends Hand(5*initOrder)
+  case object Set extends Hand(4*initOrder)
+  case object TwoPair extends Hand(3*initOrder)
+  case object OnePair extends Hand(2*initOrder)
+  case object HighCard extends Hand(1*initOrder)
 }
 
 class HandForce(val handType: Hand, val internalForce: Int = 0) extends Ordered[HandForce] {
