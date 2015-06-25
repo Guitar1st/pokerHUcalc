@@ -73,7 +73,7 @@ class PlayersHand(c1: Card, c2: Card, c3: Card, c4: Card, c5: Card) {
   def countForce: HandForce = {
     // todo: finish this func
     lazy val straightVal = isStraight
-    lazy val diffVals = cardsNumbersSorted.toSet.size
+    lazy val diffVals = cardsNumbersSorted.groupBy(x => x).mapValues(_.length)
     //println(s"diffVals = $diffVals")
     if (isFlush) {
       if (straightVal != 0) {
@@ -81,11 +81,17 @@ class PlayersHand(c1: Card, c2: Card, c3: Card, c4: Card, c5: Card) {
       } else new HandForce(Hand.Flush, handId)
     } else if (straightVal != 0) {
       new HandForce(Hand.Straight, straightVal)
-    } else diffVals match {
+    } else diffVals.size match {
       case 5 => new HandForce(Hand.HighCard, handId)
       case 4 => new HandForce(Hand.OnePair, handId)
-      case 3 => new HandForce(Hand.TwoPair, handId) // Can be Set
-      case 2 => new HandForce(Hand.FullHouse, handId) // Can be Four
+      case 3 => diffVals.values.max match {
+        case 3 => new HandForce(Hand.Set, handId)
+        case 2 => new HandForce(Hand.TwoPair, handId)
+      }
+      case 2 => diffVals.values.max match {
+        case 4 => new HandForce(Hand.Four, handId)
+        case 3 => new HandForce(Hand.FullHouse, handId)
+      }
     }
 
   }
